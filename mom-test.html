@@ -1,0 +1,796 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Mom Test de Hash &amp; Block</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+/* Layout: cuaderno de campo. Hero con un revisor de sesgo en vivo; después la entrevista como secuencia de 5 etapas con índice fijo en escritorio. Paleta de marca: negro, dorado y crema. */
+:root{
+  --crema:#F1EBDC;
+  --hoja:#F8F4EA;
+  --tinta:#121110;
+  --tinta-2:#5C574B;
+  --linea:#D6CCB4;
+  --oro:#7D5D10;
+  --oro-fill:#D4AF37;
+  --sobre-oro:#121110;
+  --ok:#2E6A3E;
+  --mal:#A2302A;
+  --display:"IBM Plex Sans Condensed","Arial Narrow",sans-serif;
+  --texto:"IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --max:1120px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --crema:#0B0B0C; --hoja:#161513; --tinta:#EEE7D5; --tinta-2:#A39C8A; --linea:#2E2B26;
+    --oro:#D9B44A; --oro-fill:#D4AF37; --sobre-oro:#0B0B0C; --ok:#7CC48F; --mal:#EE8379;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --crema:#0B0B0C; --hoja:#161513; --tinta:#EEE7D5; --tinta-2:#A39C8A; --linea:#2E2B26;
+  --oro:#D9B44A; --oro-fill:#D4AF37; --sobre-oro:#0B0B0C; --ok:#7CC48F; --mal:#EE8379;
+  color-scheme:dark;
+}
+
+*,*::before,*::after{ box-sizing:border-box; }
+html{ scroll-behavior:smooth; }
+@media (prefers-reduced-motion: reduce){ html{ scroll-behavior:auto; } }
+body{
+  margin:0; background:var(--crema); color:var(--tinta);
+  font:400 17px/1.6 var(--texto); -webkit-font-smoothing:antialiased;
+}
+a{ color:inherit; }
+:focus-visible{ outline:3px solid var(--oro-fill); outline-offset:3px; border-radius:2px; }
+p{ margin:0; }
+ul,ol{ margin:0; padding:0; list-style:none; }
+h1,h2,h3{ font-family:var(--display); margin:0; text-wrap:balance; letter-spacing:-0.01em; }
+h1{ font-size:clamp(2.4rem, 6.4vw, 4.4rem); font-weight:700; line-height:1.02; letter-spacing:-0.015em; }
+h2{ font-size:clamp(1.8rem, 3.8vw, 2.6rem); font-weight:600; line-height:1.08; }
+h3{ font-size:1.3rem; font-weight:600; line-height:1.2; }
+
+.wrap{
+  max-width:var(--max); margin:0 auto;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+}
+@media (min-width:720px){
+  .wrap{
+    padding-left:max(32px, env(safe-area-inset-left, 0px));
+    padding-right:max(32px, env(safe-area-inset-right, 0px));
+  }
+}
+.eyebrow{ font:600 .78rem/1.3 var(--display); letter-spacing:.2em; text-transform:uppercase; color:var(--oro); }
+.lede{ font-size:1.1rem; color:var(--tinta-2); max-width:34em; }
+.mono{ font-family:var(--mono); }
+.eq{ color:var(--ok); font-family:var(--mono); font-weight:600; }
+.ne{ color:var(--mal); font-family:var(--mono); font-weight:600; }
+
+.btn{
+  display:inline-flex; align-items:center; gap:8px; cursor:pointer;
+  font:600 .9rem/1 var(--texto); padding:10px 14px; border-radius:5px;
+  background:transparent; color:var(--tinta); border:1px solid var(--linea);
+}
+.btn:hover{ border-color:var(--tinta); }
+
+/* Header */
+.top{ border-bottom:1px solid var(--linea); }
+.top .wrap{ display:flex; align-items:center; justify-content:space-between; gap:16px; min-height:64px; }
+.brand{ display:flex; align-items:center; gap:10px; text-decoration:none; }
+.brand svg{ width:28px; height:28px; flex:none; color:var(--tinta); }
+.brand b{ font:700 1.15rem/1 var(--display); letter-spacing:.06em; text-transform:uppercase; }
+.brand small{ display:block; font:600 .68rem/1.2 var(--display); letter-spacing:.22em; text-transform:uppercase; color:var(--oro); margin-top:3px; }
+.nav{ display:none; gap:24px; font-size:.92rem; }
+.nav a{ text-decoration:none; color:var(--tinta-2); }
+.nav a:hover{ color:var(--tinta); text-decoration:underline; text-underline-offset:4px; }
+@media (min-width:900px){ .nav{ display:flex; } }
+
+/* Hero */
+.hero{ padding-block:56px 72px; }
+.hero .wrap{ display:grid; gap:40px; align-items:start; }
+@media (min-width:940px){ .hero .wrap{ grid-template-columns:1.05fr .95fr; gap:64px; } .hero{ padding-block:88px 96px; } }
+.hero-copy{ display:grid; gap:22px; min-width:0; }
+.datos{ font:400 .85rem/1.5 var(--mono); color:var(--tinta-2); display:flex; flex-wrap:wrap; gap:6px 18px; }
+.datos span b{ color:var(--tinta); font-weight:600; }
+
+.detector{
+  background:var(--hoja); border:1px solid var(--linea); border-radius:10px;
+  padding:22px; display:grid; gap:14px; min-width:0;
+}
+.detector label{ font-weight:600; }
+.detector .hint{ font-size:.88rem; color:var(--tinta-2); }
+textarea{
+  width:100%; min-height:96px; resize:vertical; padding:12px; border-radius:6px;
+  border:1px solid var(--linea); background:var(--crema); color:var(--tinta);
+  font:.95rem/1.5 var(--mono);
+}
+.ejemplos{ display:flex; flex-wrap:wrap; gap:8px; }
+.ejemplos button{
+  font:.8rem/1.35 var(--texto); text-align:left; cursor:pointer;
+  padding:7px 10px; border-radius:4px; border:1px dashed var(--linea);
+  background:transparent; color:var(--tinta-2); max-width:100%;
+}
+.ejemplos button:hover{ color:var(--tinta); border-color:var(--tinta-2); }
+.veredicto{ display:grid; gap:10px; border-top:1px solid var(--linea); padding-top:14px; min-height:7.5em; }
+.veredicto strong{ font:600 1.35rem/1.1 var(--display); display:flex; gap:10px; align-items:baseline; }
+.veredicto strong .marca{ font:600 1.5rem/1 var(--mono); }
+.veredicto.mal strong{ color:var(--mal); }
+.veredicto.ok strong{ color:var(--ok); }
+.veredicto ul{ display:grid; gap:8px; }
+.veredicto li{ font-size:.93rem; color:var(--tinta-2); overflow-wrap:anywhere; }
+.veredicto li b{ color:var(--tinta); font-weight:600; }
+
+/* Sections */
+section.bloque{ padding-block:72px; border-top:1px solid var(--linea); }
+.head{ display:grid; gap:12px; margin-bottom:40px; max-width:44em; }
+
+.reglas{ display:grid; gap:32px; }
+@media (min-width:820px){ .reglas{ grid-template-columns:repeat(3,1fr); gap:40px; } }
+.reglas article{ border-top:3px solid var(--tinta); padding-top:16px; display:grid; gap:8px; align-content:start; }
+.reglas p{ color:var(--tinta-2); }
+.antes{ margin-top:40px; display:grid; gap:10px; padding-top:20px; border-top:1px dashed var(--linea); }
+.antes ul{ display:grid; gap:8px; }
+@media (min-width:820px){ .antes ul{ grid-template-columns:repeat(3,1fr); gap:24px; } }
+.antes li{ color:var(--tinta-2); font-size:.95rem; }
+
+/* Hipótesis */
+.hip{ display:grid; gap:10px; padding-block:18px; border-top:1px solid var(--linea); }
+.hip:last-of-type{ border-bottom:1px solid var(--linea); }
+@media (min-width:820px){ .hip{ grid-template-columns:1.15fr 1fr 1fr; gap:32px; } }
+.hip h3{ font-size:1.12rem; }
+.hip p{ color:var(--tinta-2); font-size:.95rem; display:grid; grid-template-columns:20px 1fr; gap:6px; }
+.nota{ margin-top:20px; font-size:.95rem; color:var(--tinta-2); max-width:44em; }
+
+/* Entrevista */
+.entrevista{ display:grid; gap:24px; }
+@media (min-width:960px){ .entrevista{ grid-template-columns:230px 1fr; gap:56px; align-items:start; } }
+.indice{ display:none; }
+@media (min-width:960px){
+  .indice{ display:grid; gap:16px; position:sticky; top:calc(env(safe-area-inset-top, 0px) + 24px); }
+}
+.indice ol{ display:grid; gap:2px; }
+.indice a{
+  display:grid; grid-template-columns:22px 1fr auto; gap:8px; align-items:baseline;
+  padding:8px 0; text-decoration:none; border-bottom:1px solid var(--linea); font-size:.95rem;
+}
+.indice a:hover .t{ text-decoration:underline; text-underline-offset:4px; }
+.indice .n{ font:700 1rem/1 var(--display); color:var(--oro); }
+.indice .c{ font:.78rem/1 var(--mono); color:var(--tinta-2); font-variant-numeric:tabular-nums; }
+.etapas{ display:grid; min-width:0; }
+.etapa{ display:grid; gap:18px; padding-block:32px; border-top:1px solid var(--linea); scroll-margin-top:24px; }
+.etapa:first-child{ border-top:none; padding-top:0; }
+.etapa-head{ display:grid; grid-template-columns:auto 1fr; gap:6px 18px; align-items:start; }
+.etapa-head .num{ font:700 3rem/.85 var(--display); color:var(--oro); grid-row:span 2; min-width:1ch; }
+.etapa-head h3{ font-size:1.55rem; }
+.etapa-head p{ color:var(--tinta-2); }
+.preguntas{ display:grid; }
+.preguntas label{
+  display:grid; grid-template-columns:20px 1fr; gap:12px; align-items:start;
+  padding:10px 0; border-bottom:1px dashed var(--linea); cursor:pointer;
+}
+.preguntas li:first-child label{ border-top:1px dashed var(--linea); }
+.preguntas input{
+  appearance:none; -webkit-appearance:none; margin:4px 0 0; width:20px; height:20px;
+  border:1.5px solid var(--tinta-2); border-radius:3px; background:transparent; cursor:pointer;
+}
+.preguntas input:checked{
+  background:var(--oro-fill) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5 10.5l3.2 3.2L15 7' fill='none' stroke='%23121110' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat;
+  border-color:var(--oro-fill);
+}
+.preguntas input:checked + span{ color:var(--tinta-2); }
+.fila{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.reps{ display:flex; flex-wrap:wrap; gap:8px; }
+.reps span{ font:.85rem/1.3 var(--mono); padding:6px 10px; border:1px solid var(--linea); border-radius:4px; }
+.sub{ font:600 .78rem/1.3 var(--display); letter-spacing:.16em; text-transform:uppercase; color:var(--tinta-2); }
+
+.tabs{ display:flex; flex-wrap:wrap; gap:6px; }
+.tabs button{
+  font:500 .9rem/1 var(--texto); padding:9px 12px; border-radius:4px; cursor:pointer;
+  border:1px solid var(--linea); background:transparent; color:var(--tinta);
+}
+.tabs button[aria-selected="true"]{ background:var(--tinta); color:var(--crema); border-color:var(--tinta); }
+.panel{ display:grid; gap:12px; }
+.panel h4{ margin:0; font:600 1.05rem/1.2 var(--display); }
+
+.escalera{ display:grid; gap:10px; }
+.escalera li{
+  display:grid; gap:6px; align-content:end; padding:16px; border-radius:6px;
+  background:var(--hoja); border:1px solid var(--linea);
+}
+.escalera li:nth-child(2){ margin-left:14px; }
+.escalera li:nth-child(3){ margin-left:28px; background:var(--oro-fill); border-color:var(--oro-fill); color:var(--sobre-oro); }
+.escalera b{ font:600 1.3rem/1.1 var(--display); }
+.escalera span{ font-size:.93rem; }
+.escalera li:not(:nth-child(3)) span{ color:var(--tinta-2); }
+@media (min-width:720px){
+  .escalera{ grid-template-columns:repeat(3,1fr); align-items:end; }
+  .escalera li:nth-child(2), .escalera li:nth-child(3){ margin-left:0; }
+  .escalera li:nth-child(1){ min-height:130px; }
+  .escalera li:nth-child(2){ min-height:175px; }
+  .escalera li:nth-child(3){ min-height:220px; }
+}
+.aviso{ font-size:.95rem; color:var(--tinta-2); display:grid; grid-template-columns:20px 1fr; gap:6px; }
+
+/* Reformular */
+.pares-head{ display:none; }
+@media (min-width:880px){
+  .pares-head{ display:grid; grid-template-columns:1fr 1fr; gap:40px; padding-bottom:10px; }
+}
+.par{ display:grid; gap:8px; padding-block:18px; border-top:1px solid var(--linea); }
+.par:last-child{ border-bottom:1px solid var(--linea); }
+@media (min-width:880px){ .par{ grid-template-columns:1fr 1fr; gap:40px; } }
+.par > div{ display:grid; grid-template-columns:20px 1fr; gap:6px; min-width:0; }
+.par .malo{ color:var(--tinta-2); }
+.par .porque{ grid-column:2; font-size:.85rem; font-style:italic; color:var(--tinta-2); }
+.par .bueno{ font-weight:500; }
+
+/* Notas */
+.split{ display:grid; gap:36px; }
+@media (min-width:820px){ .split{ grid-template-columns:1fr 1fr; gap:56px; } }
+.split h3{ margin-bottom:12px; }
+.split ul{ display:grid; gap:10px; }
+.split li{ display:grid; grid-template-columns:20px 1fr; gap:6px; color:var(--tinta-2); }
+.registro{ margin-top:48px; display:grid; gap:14px; }
+.tabla{ overflow-x:auto; border:1px solid var(--linea); border-radius:6px; background:var(--hoja); }
+.tabla table{ border-collapse:collapse; width:100%; min-width:760px; }
+.tabla th{ font:500 .72rem/1.3 var(--mono); text-transform:uppercase; letter-spacing:.06em; text-align:left; color:var(--tinta-2); padding:10px 12px; border-bottom:1px solid var(--linea); }
+.tabla td{ height:46px; border-bottom:1px dashed var(--linea); border-right:1px dashed var(--linea); }
+.tabla td:last-child{ border-right:none; }
+
+footer{ padding-block:40px 56px; border-top:1px solid var(--linea); font-size:.88rem; color:var(--tinta-2); }
+footer .wrap{ display:grid; gap:8px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#inicio" aria-label="Hash and Block, inicio">
+      <svg viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="10" y="3" width="3" height="26" fill="currentColor"/>
+        <rect x="19" y="3" width="3" height="26" fill="currentColor"/>
+        <rect x="3" y="10" width="26" height="3" fill="currentColor"/>
+        <rect x="3" y="19" width="26" height="3" fill="currentColor"/>
+        <rect x="14" y="14" width="4" height="4" fill="#D4AF37"/>
+      </svg>
+      <span><b>Hash and Block</b><small>Guía Mom Test</small></span>
+    </a>
+    <nav class="nav" aria-label="Secciones">
+      <a href="#reglas">Reglas</a>
+      <a href="#hipotesis">Hipótesis</a>
+      <a href="#entrevista">Entrevista</a>
+      <a href="#reformular">Reformular</a>
+      <a href="#notas">Notas</a>
+    </nav>
+  </div>
+</header>
+
+<main id="inicio">
+
+  <section class="hero" aria-labelledby="titulo">
+    <div class="wrap">
+      <div class="hero-copy">
+        <p class="eyebrow">Hash and Block · Notaría digital</p>
+        <h1 id="titulo">Pregunta por lo que pasó, no por lo que harían.</h1>
+        <p class="lede">Guía para entrevistar a empresas, creadores e instituciones sin contaminar sus respuestas. Una coma cambia una huella SHA-256. Una palabra cambia una respuesta.</p>
+        <p class="datos"><span><b>15–30</b> min por entrevista</span><span><b>5</b> etapas</span><span><b>0</b> menciones del producto</span></p>
+      </div>
+
+      <div class="detector">
+        <label for="pregunta">Revisa tu pregunta antes de hacerla</label>
+        <textarea id="pregunta" spellcheck="false" autocomplete="off">¿Usarías una herramienta que pruebe que tu documento no cambió?</textarea>
+        <div class="ejemplos" aria-label="Ejemplos para probar">
+          <button type="button" data-ej="¿Pagarías $14,99 al mes por certificar tus contratos?">¿Pagarías $14,99 al mes…?</button>
+          <button type="button" data-ej="¿No te frustra que alteren tus documentos?">¿No te frustra…?</button>
+          <button type="button" data-ej="¿Cuándo fue la última vez que hubo una duda sobre la versión correcta de un documento?">¿Cuándo fue la última vez…?</button>
+        </div>
+        <div class="veredicto mal" id="veredicto" role="status" aria-live="polite">
+          <strong><span class="marca">≠</span> Con sesgo</strong>
+          <ul>
+            <li><b>Pide una predicción.</b> Pregunta por la última vez que pasó: “¿Cuándo fue la última vez que…? ¿Qué hiciste?”</li>
+            <li><b>Menciona tu solución o jerga técnica.</b> Quita tu producto de la pregunta. Habla de su trabajo, no de tu idea.</li>
+          </ul>
+        </div>
+        <p class="hint">Busca palabras típicas de sesgo. No reemplaza tu criterio.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloque" id="reglas" aria-labelledby="h-reglas">
+    <div class="wrap">
+      <div class="head">
+        <p class="eyebrow">El método</p>
+        <h2 id="h-reglas">Tres reglas</h2>
+        <p class="lede">Si la persona sabe qué estás construyendo, te dirá lo que quieres oír.</p>
+      </div>
+      <div class="reglas">
+        <article>
+          <h3>Su trabajo, no tu idea</h3>
+          <p>No menciones Hash &amp; Block, huellas, SHA-256, blockchain ni notaría digital. No muestres la página web.</p>
+        </article>
+        <article>
+          <h3>Hechos pasados, no futuros</h3>
+          <p>“La última vez que…” y “cuéntame qué pasó”. Nada de “¿usarías?” ni “¿pagarías?”.</p>
+        </article>
+        <article>
+          <h3>Escucha más de lo que hablas</h3>
+          <p>Si estás explicando, ya no estás aprendiendo. Repregunta con “¿por qué?” y “¿qué hiciste después?”.</p>
+        </article>
+      </div>
+      <div class="antes">
+        <p class="sub">Antes de cada entrevista</p>
+        <ul>
+          <li>Elige las 3 cosas que más quieres aprender de esa persona.</li>
+          <li>Vayan dos si pueden: uno pregunta y otro anota.</li>
+          <li>Si te preguntan qué haces: “Investigo cómo las empresas manejan las versiones de sus documentos importantes”.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloque" id="hipotesis" aria-labelledby="h-hip">
+    <div class="wrap">
+      <div class="head">
+        <p class="eyebrow">Lo que está en juego</p>
+        <h2 id="h-hip">Qué queremos aprender</h2>
+        <p class="lede">Cada entrevista debe mover una hipótesis hacia confirmada o descartada. “Me parece interesante” no mueve ninguna.</p>
+      </div>
+      <div class="hip">
+        <h3>Hay disputas reales sobre cuál era la versión original de un documento</h3>
+        <p><span class="eq">=</span><span>Casos con fecha en el último año y un costo concreto.</span></p>
+        <p><span class="ne">≠</span><span>Nadie recuerda un caso, o “pasa, pero no es grave”.</span></p>
+      </div>
+      <div class="hip">
+        <h3>Probar que algo existía en cierta fecha es un problema</h3>
+        <p><span class="eq">=</span><span>Tuvieron que demostrarlo y les costó, o perdieron algo.</span></p>
+        <p><span class="ne">≠</span><span>Nunca les ha pasado ni lo han visto pasar.</span></p>
+      </div>
+      <div class="hip">
+        <h3>Hoy lo resuelven con métodos lentos, caros o débiles</h3>
+        <p><span class="eq">=</span><span>Describen pasos, tiempos, pagos y frustración.</span></p>
+        <p><span class="ne">≠</span><span>Un método actual (notario, firma electrónica, correo) les funciona bien.</span></p>
+      </div>
+      <div class="hip">
+        <h3>Ya gastan dinero en algo parecido</h3>
+        <p><span class="eq">=</span><span>Monto anual concreto y quién lo aprueba.</span></p>
+        <p><span class="ne">≠</span><span>Nunca han pagado por certificar ni notarizar.</span></p>
+      </div>
+      <div class="hip">
+        <h3>No subir el contenido del archivo importa</h3>
+        <p><span class="eq">=</span><span>Rechazaron herramientas por confidencialidad o tienen políticas que lo impiden.</span></p>
+        <p><span class="ne">≠</span><span>Suben todo a la nube sin reparo.</span></p>
+      </div>
+      <div class="hip">
+        <h3>Las empresas sienten el problema más que las personas</h3>
+        <p><span class="eq">=</span><span>Más casos, más frecuentes y más caros en área legal y empresas tech.</span></p>
+        <p><span class="ne">≠</span><span>Los casos fuertes aparecen en otro segmento.</span></p>
+      </div>
+      <p class="nota">Los precios del plan se validan con lo que ya gastan hoy y con el compromiso que consigas al cierre, no preguntando “¿pagarías?”.</p>
+    </div>
+  </section>
+
+  <section class="bloque" id="entrevista" aria-labelledby="h-ent">
+    <div class="wrap">
+      <div class="head">
+        <p class="eyebrow">Paso a paso</p>
+        <h2 id="h-ent">La entrevista</h2>
+        <p class="lede">Marca cada pregunta mientras la haces. Las marcas se guardan solo en este navegador.</p>
+      </div>
+      <div class="entrevista">
+        <aside class="indice" aria-label="Etapas de la entrevista">
+          <ol>
+            <li><a href="#e1"><span class="n">1</span><span class="t">Apertura</span><span class="c" data-count="e1"></span></a></li>
+            <li><a href="#e2"><span class="n">2</span><span class="t">El problema</span><span class="c" data-count="e2"></span></a></li>
+            <li><a href="#e3"><span class="n">3</span><span class="t">Soluciones y costo</span><span class="c" data-count="e3"></span></a></li>
+            <li><a href="#e4"><span class="n">4</span><span class="t">Por segmento</span><span class="c">elige 2–3</span></a></li>
+            <li><a href="#e5"><span class="n">5</span><span class="t">Cierre</span><span class="c" data-count="e5"></span></a></li>
+          </ol>
+          <button class="btn" type="button" id="reiniciar">Nueva entrevista</button>
+        </aside>
+
+        <div class="etapas">
+
+          <article class="etapa" id="e1">
+            <div class="etapa-head">
+              <span class="num">1</span>
+              <h3>Apertura</h3>
+              <p>Entra en contexto con su rol y sus documentos. Todavía no hables de problemas.</p>
+            </div>
+            <ol class="preguntas" id="l-e1">
+              <li><label><input type="checkbox" id="q-a1"><span>¿Cuál es tu rol y qué tipo de documentos pasan por tus manos en una semana?</span></label></li>
+              <li><label><input type="checkbox" id="q-a2"><span>De esos, ¿cuáles son los más delicados si algo sale mal? ¿Por qué esos?</span></label></li>
+              <li><label><input type="checkbox" id="q-a3"><span>¿Con quién intercambias esos documentos: clientes, proveedores, abogados, auditores?</span></label></li>
+              <li><label><input type="checkbox" id="q-a4"><span>Cuéntame cómo fue el último contrato (o informe, o entregable) que pasó de borrador a versión final. ¿Por cuántas manos pasó?</span></label></li>
+              <li><label><input type="checkbox" id="q-a5"><span>¿Dónde quedó guardada la versión final? ¿Cómo sabe tu equipo cuál es?</span></label></li>
+            </ol>
+            <div class="fila"><button class="btn" type="button" data-copy="l-e1">Copiar preguntas</button></div>
+          </article>
+
+          <article class="etapa" id="e2">
+            <div class="etapa-head">
+              <span class="num">2</span>
+              <h3>El problema</h3>
+              <p>Busca una historia real y recórrela paso a paso. Una historia bien contada vale más que diez opiniones.</p>
+            </div>
+            <ol class="preguntas" id="l-e2">
+              <li><label><input type="checkbox" id="q-p1"><span>¿Cuándo fue la última vez que hubo una duda sobre cuál era la versión correcta de un documento?</span></label></li>
+              <li><label><input type="checkbox" id="q-p2"><span>¿Qué pasó? Cuéntamelo desde el principio.</span></label></li>
+              <li><label><input type="checkbox" id="q-p3"><span>¿Quién lo notó y cómo?</span></label></li>
+              <li><label><input type="checkbox" id="q-p4"><span>¿Cómo se resolvió y cuánto tardó?</span></label></li>
+              <li><label><input type="checkbox" id="q-p5"><span>¿Qué costó: horas, dinero, un cliente, una relación?</span></label></li>
+              <li><label><input type="checkbox" id="q-p6"><span>¿Alguna vez alguien cambió un documento después de enviarlo, o te acusaron a ti de haberlo cambiado? ¿Qué hiciste?</span></label></li>
+              <li><label><input type="checkbox" id="q-p7"><span>¿Alguna vez tuviste que demostrar que un documento o un trabajo ya existía en cierta fecha? ¿Cómo lo demostraste? ¿Te creyeron?</span></label></li>
+              <li><label><input type="checkbox" id="q-p8"><span>En la última disputa, ¿qué prueba aceptó la otra parte? ¿Cuál no aceptó?</span></label></li>
+              <li><label><input type="checkbox" id="q-p9"><span>¿Cuántas veces ha pasado algo así en el último año?</span></label></li>
+              <li><label><input type="checkbox" id="q-p10"><span>¿Qué pasó la vez que no se pudo resolver bien?</span></label></li>
+              <li><label><input type="checkbox" id="q-p11"><span>¿Lo has visto pasar a un colega o a un cliente?</span></label></li>
+            </ol>
+            <p class="sub">Repreguntas que siempre sirven</p>
+            <div class="reps">
+              <span>¿Por qué?</span>
+              <span>¿Qué hiciste después?</span>
+              <span>¿Me puedes mostrar?</span>
+              <span>¿Qué te permitiría hacer que hoy no puedes?</span>
+            </div>
+            <div class="fila"><button class="btn" type="button" data-copy="l-e2">Copiar preguntas</button></div>
+          </article>
+
+          <article class="etapa" id="e3">
+            <div class="etapa-head">
+              <span class="num">3</span>
+              <h3>Soluciones y costo</h3>
+              <p>Si nunca buscaron una solución, el problema no les duele lo suficiente. Es la señal más importante.</p>
+            </div>
+            <ol class="preguntas" id="l-e3">
+              <li><label><input type="checkbox" id="q-s1"><span>¿Qué hacen hoy para dejar constancia de qué versión enviaron o firmaron?</span></label></li>
+              <li><label><input type="checkbox" id="q-s2"><span>¿Han buscado alguna herramienta o servicio para esto? ¿Cuál? ¿Por qué no la usan, o por qué la dejaron?</span></label></li>
+              <li><label><input type="checkbox" id="q-s3"><span>¿Cuándo fue la última vez que fueron a un notario o usaron firma electrónica? ¿Para qué documento? ¿Cuánto costó y cuánto tardó?</span></label></li>
+              <li><label><input type="checkbox" id="q-s4"><span>¿Cuánto gastaron el último año en notarizar, certificar o firmar documentos? ¿De qué presupuesto salió?</span></label></li>
+              <li><label><input type="checkbox" id="q-s5"><span>Cuando compran una herramienta así, ¿quién decide? ¿Cómo fue la última compra parecida?</span></label></li>
+              <li><label><input type="checkbox" id="q-s6"><span>¿Alguna regla de confidencialidad les impidió subir un documento a un servicio externo? ¿Qué pasó?</span></label></li>
+              <li><label><input type="checkbox" id="q-s7"><span>¿Qué problemas tienen más arriba en la lista ahora mismo? ¿Dónde queda este?</span></label></li>
+            </ol>
+            <div class="fila"><button class="btn" type="button" data-copy="l-e3">Copiar preguntas</button></div>
+          </article>
+
+          <article class="etapa" id="e4">
+            <div class="etapa-head">
+              <span class="num">4</span>
+              <h3>Por segmento</h3>
+              <p>Elige dos o tres según con quién hables, después del problema.</p>
+            </div>
+            <div class="tabs" role="tablist" aria-label="Segmentos">
+              <button type="button" role="tab" id="t-legal" aria-controls="p-legal" aria-selected="true">Legal y empresas</button>
+              <button type="button" role="tab" id="t-dis" aria-controls="p-dis" aria-selected="false" tabindex="-1">Diseño y creadores</button>
+              <button type="button" role="tab" id="t-tec" aria-controls="p-tec" aria-selected="false" tabindex="-1">Tecnología</button>
+              <button type="button" role="tab" id="t-edu" aria-controls="p-edu" aria-selected="false" tabindex="-1">Educación</button>
+              <button type="button" role="tab" id="t-pla" aria-controls="p-pla" aria-selected="false" tabindex="-1">Plataformas (API)</button>
+            </div>
+            <div class="panel" role="tabpanel" id="p-legal" aria-labelledby="t-legal">
+              <h4>Empresas y áreas legales</h4>
+              <ol class="preguntas" id="l-legal">
+                <li><label><input type="checkbox" id="q-l1"><span>¿Cuál fue el último contrato en que cada parte creía haber firmado algo distinto? ¿Cómo se aclaró?</span></label></li>
+                <li><label><input type="checkbox" id="q-l2"><span>¿Cómo prueban qué versión de un anexo o una propuesta se envió al cliente?</span></label></li>
+                <li><label><input type="checkbox" id="q-l3"><span>¿Qué documentos notarizan hoy y por qué esos y no otros?</span></label></li>
+              </ol>
+            </div>
+            <div class="panel" role="tabpanel" id="p-dis" aria-labelledby="t-dis">
+              <h4>Diseñadores y creadores</h4>
+              <ol class="preguntas" id="l-dis">
+                <li><label><input type="checkbox" id="q-d1"><span>¿Alguna vez viste un trabajo tuyo usado sin permiso? ¿Qué hiciste?</span></label></li>
+                <li><label><input type="checkbox" id="q-d2"><span>¿Cómo demostraste que era tuyo y de qué fecha era?</span></label></li>
+                <li><label><input type="checkbox" id="q-d3"><span>¿Has perdido un pago por una discusión sobre lo que entregaste?</span></label></li>
+              </ol>
+            </div>
+            <div class="panel" role="tabpanel" id="p-tec" aria-labelledby="t-tec">
+              <h4>Empresas de tecnología</h4>
+              <ol class="preguntas" id="l-tec">
+                <li><label><input type="checkbox" id="q-t1"><span>¿Cuándo fue la última vez que un cliente dijo que un entregable no era el acordado?</span></label></li>
+                <li><label><input type="checkbox" id="q-t2"><span>¿Cómo dejan constancia de informes técnicos o auditorías entregadas?</span></label></li>
+                <li><label><input type="checkbox" id="q-t3"><span>¿Algún cliente, regulador o auditor les pidió evidencia de que un archivo no cambió? ¿Qué le dieron?</span></label></li>
+              </ol>
+            </div>
+            <div class="panel" role="tabpanel" id="p-edu" aria-labelledby="t-edu">
+              <h4>Educación e investigación</h4>
+              <ol class="preguntas" id="l-edu">
+                <li><label><input type="checkbox" id="q-u1"><span>¿Cómo comprueban que una entrega no se modificó después de la fecha límite?</span></label></li>
+                <li><label><input type="checkbox" id="q-u2"><span>¿Recuerdas un caso de disputa por plagio o por quién publicó primero? ¿Cómo se resolvió?</span></label></li>
+                <li><label><input type="checkbox" id="q-u3"><span>¿Cómo guardan las versiones de los datos de una investigación?</span></label></li>
+              </ol>
+            </div>
+            <div class="panel" role="tabpanel" id="p-pla" aria-labelledby="t-pla">
+              <h4>Plataformas digitales</h4>
+              <ol class="preguntas" id="l-pla">
+                <li><label><input type="checkbox" id="q-x1"><span>¿Qué documentos genera su plataforma que alguien podría disputar después?</span></label></li>
+                <li><label><input type="checkbox" id="q-x2"><span>¿Algún usuario reclamó que un documento cambió? ¿Qué hicieron?</span></label></li>
+                <li><label><input type="checkbox" id="q-x3"><span>¿Han construido algo propio para registrar esos documentos? ¿Cuánto tiempo les tomó y quién lo mantiene?</span></label></li>
+              </ol>
+            </div>
+            <div class="fila"><button class="btn" type="button" id="copiar-segmento">Copiar este segmento</button></div>
+          </article>
+
+          <article class="etapa" id="e5">
+            <div class="etapa-head">
+              <span class="num">5</span>
+              <h3>Cierre</h3>
+              <p>Termina con un siguiente paso concreto, no con un “me encanta”.</p>
+            </div>
+            <ol class="preguntas" id="l-e5">
+              <li><label><input type="checkbox" id="q-c1"><span>¿Hay algo que debí preguntarte y no te pregunté?</span></label></li>
+              <li><label><input type="checkbox" id="q-c2"><span>¿Con quién más debería hablar sobre esto? ¿Me lo presentarías?</span></label></li>
+              <li><label><input type="checkbox" id="q-c3"><span>¿Puedo escribirte cuando tengamos algo para probar?</span></label></li>
+            </ol>
+            <p class="sub">Si confirmó el problema, recién aquí menciona Hash &amp; Block y pide un paso</p>
+            <ol class="escalera" aria-label="Escalera de compromiso, de menor a mayor">
+              <li><b>Tiempo</b><span>Una segunda reunión de 30 minutos para probar la versión piloto con un documento real.</span></li>
+              <li><b>Reputación</b><span>Que te presente a quien decide (área legal, gerencia) o a otra empresa con el mismo problema.</span></li>
+              <li><b>Dinero</b><span>Ser empresa piloto con una carta de intención, un precio de lanzamiento o un pago anticipado.</span></li>
+            </ol>
+            <p class="aviso"><span class="ne">≠</span><span>“Me encanta, avísame cuando esté listo” no es un compromiso. Si rechaza todos los pasos, anótalo: también es aprendizaje.</span></p>
+            <div class="fila"><button class="btn" type="button" data-copy="l-e5">Copiar preguntas</button></div>
+          </article>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloque" id="reformular" aria-labelledby="h-ref">
+    <div class="wrap">
+      <div class="head">
+        <p class="eyebrow">Antes de salir a entrevistar</p>
+        <h2 id="h-ref">Con sesgo ≠ sin sesgo</h2>
+        <p class="lede">Si una pregunta menciona tu solución, pide una opinión o habla del futuro, cámbiala por un hecho pasado.</p>
+      </div>
+      <div class="pares-head sub" aria-hidden="true"><span>Con sesgo</span><span>Mejor pregunta</span></div>
+      <div class="pares">
+        <div class="par">
+          <div class="malo"><span class="ne">≠</span><span>¿Te parece buena idea una notaría digital?</span><span class="porque">Pide un cumplido; la gente es amable.</span></div>
+          <div class="bueno"><span class="eq">=</span><span>¿Cómo dejas constancia hoy de qué versión enviaste?</span></div>
+        </div>
+        <div class="par">
+          <div class="malo"><span class="ne">≠</span><span>¿Usarías una herramienta que pruebe que tu documento no cambió?</span><span class="porque">Pide una predicción; todos se imaginan usándola.</span></div>
+          <div class="bueno"><span class="eq">=</span><span>¿Cuándo fue la última vez que necesitaste probarlo? ¿Qué hiciste?</span></div>
+        </div>
+        <div class="par">
+          <div class="malo"><span class="ne">≠</span><span>¿Pagarías 14,99 dólares al mes por esto?</span><span class="porque">Nadie sabe qué pagaría; dicen sí por cortesía.</span></div>
+          <div class="bueno"><span class="eq">=</span><span>¿Cuánto gastaron el último año en notarías o firma electrónica?</span></div>
+        </div>
+        <div class="par">
+          <div class="malo"><span class="ne">≠</span><span>¿No te frustra que alteren tus documentos?</span><span class="porque">Sugiere la respuesta.</span></div>
+          <div class="bueno"><span class="eq">=</span><span>¿Alguna vez un documento cambió después de enviarlo? ¿Qué pasó?</span></div>
+        </div>
+        <div class="par">
+          <div class="malo"><span class="ne">≠</span><span>¿Normalmente cómo manejan las versiones?</span><span class="porque">“Normalmente” describe lo ideal, no lo real.</span></div>
+          <div class="bueno"><span class="eq">=</span><span>¿Cómo manejaron las versiones del último contrato que cerraron?</span></div>
+        </div>
+        <div class="par">
+          <div class="malo"><span class="ne">≠</span><span>¿Blockchain te daría más confianza?</span><span class="porque">Mete tu solución y jerga técnica.</span></div>
+          <div class="bueno"><span class="eq">=</span><span>En la última disputa, ¿qué prueba aceptó la otra parte?</span></div>
+        </div>
+        <div class="par">
+          <div class="malo"><span class="ne">≠</span><span>¿Qué funciones te gustaría que tuviera?</span><span class="porque">Te diseñan el producto en vez de contarte el problema.</span></div>
+          <div class="bueno"><span class="eq">=</span><span>¿Por qué necesitas eso? ¿Qué te permitiría hacer que hoy no puedes?</span></div>
+        </div>
+        <div class="par">
+          <div class="malo"><span class="ne">≠</span><span>¿Cuánto te preocupa la seguridad de tus archivos?</span><span class="porque">Todos dicen que mucho; no cuesta nada decirlo.</span></div>
+          <div class="bueno"><span class="eq">=</span><span>¿Alguna vez dejaron de usar una herramienta por confidencialidad? ¿Cuál?</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloque" id="notas" aria-labelledby="h-not">
+    <div class="wrap">
+      <div class="head">
+        <p class="eyebrow">Después de cada conversación</p>
+        <h2 id="h-not">Qué anotar</h2>
+        <p class="lede">Lo que dijo, con sus palabras, no lo que entendiste. Revisen las notas en equipo en menos de 24 horas y actualicen las hipótesis.</p>
+      </div>
+      <div class="split">
+        <div>
+          <h3>Señales que valen</h3>
+          <ul>
+            <li><span class="eq">=</span><span>Un caso concreto con fecha, personas y consecuencias.</span></li>
+            <li><span class="eq">=</span><span>Un costo medible: horas, dinero, un cliente perdido.</span></li>
+            <li><span class="eq">=</span><span>Ya buscaron, probaron o pagaron una solución.</span></li>
+            <li><span class="eq">=</span><span>Un método casero: carpetas con fechas, correos a sí mismos, PDF firmados a mano.</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Banderas rojas</h3>
+          <ul>
+            <li><span class="ne">≠</span><span>Cumplidos: “qué buena idea”, “me encanta”.</span></li>
+            <li><span class="ne">≠</span><span>Generalidades: “siempre”, “normalmente”, “nunca”.</span></li>
+            <li><span class="ne">≠</span><span>Futuro: “lo usaría”, “lo compraría”, “seguro les sirve”.</span></li>
+            <li><span class="ne">≠</span><span>Interés sin caso: “es interesante”, pero ninguna historia real.</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="registro">
+        <h3>Registro de entrevistas</h3>
+        <div class="tabla">
+          <table>
+            <thead>
+              <tr><th>Fecha</th><th>Persona y rol</th><th>Segmento</th><th>Caso concreto</th><th>Costo</th><th>Cómo lo resuelven hoy</th><th>Compromiso obtenido</th></tr>
+            </thead>
+            <tbody>
+              <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="fila"><button class="btn" type="button" id="copiar-tabla">Copiar columnas para Google Sheets</button></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Basado en el método The Mom Test, de Rob Fitzpatrick. Guía interna de entrevistas de validación de Hash and Block, Ecuador, 2026.</p>
+    <p>Las preguntas no mencionan el producto a propósito.</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var $ = function(s){ return document.querySelector(s); };
+  var $$ = function(s, root){ return Array.prototype.slice.call((root || document).querySelectorAll(s)); };
+
+  /* ---------- Revisor de sesgo ---------- */
+  function norm(s){ return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+
+  var REGLAS = [
+    { nombre:'Pide una predicción.',
+      re:/\b(usarias?|usarian|comprarias?|comprarian|pagarias?|pagarian|recomendarias?|contratarias?|probarias?|querrias?|harias?|estarias? dispuest[oa]s?|te gustaria|le gustaria|les gustaria|si existiera|si tuvieras|si hubiera|imagina|algun dia|en el futuro|vas a usar|van a usar)\b/,
+      tip:'Pregunta por la última vez que pasó: “¿Cuándo fue la última vez que…? ¿Qué hiciste?”' },
+    { nombre:'Busca una opinión o un cumplido.',
+      re:/\b(te parece|le parece|que opinas|que opina|que piensas|crees que|cree que|buena idea|te gusta|le gusta|te interesa|le interesa|seria util|seria bueno|te convence)\b/,
+      tip:'Cambia la opinión por un hecho: “¿Cómo lo resolviste la última vez?”' },
+    { nombre:'Sugiere la respuesta.',
+      re:/(^|[¿\s])no (te|le|les|crees|cree|es|seria|estas|estaria)\b|\b(verdad|cierto)\s*\?/,
+      tip:'Pregunta en neutro: “¿Qué pasó?” en vez de “¿No te frustra…?”' },
+    { nombre:'Pide lo ideal, no lo real.',
+      re:/\b(normalmente|generalmente|usualmente|habitualmente|siempre|nunca|por lo general|en general|tipicamente)\b/,
+      tip:'Ancla la pregunta a un caso: “el último contrato”, “la última entrega”.' },
+    { nombre:'Menciona tu solución o jerga técnica.',
+      re:/(hash|huella|sha-?256|blockchain|cadena de bloques|notaria digital|sello de tiempo|sellado de tiempo|certificado digital|\bnft\b|bitcoin|opentimestamps|esta herramienta|una herramienta que|una app que|una plataforma que|nuestra solucion|nuestro producto)/,
+      tip:'Quita tu producto de la pregunta. Habla de su trabajo, no de tu idea.' },
+    { nombre:'Pregunta por un precio hipotético.',
+      re:/(\$\s?\d|\d+\s?(dolares|usd)|cuanto pagarias|cuanto estarias|al mes por|precio justo)/,
+      tip:'Pregunta cuánto gastan hoy: “¿Cuánto gastaron el último año en notarías o firma electrónica?”' },
+    { nombre:'Le pide que diseñe el producto.',
+      re:/(que funciones|que caracteristicas|que te gustaria que tuviera|que le agregarias|que deberia tener)/,
+      tip:'Pregunta el motivo: “¿Por qué necesitas eso? ¿Qué te permitiría hacer que hoy no puedes?”' }
+  ];
+  var HECHOS = /(la ultima vez|cuando fue|que paso|que hiciste|que hicieron|cuentame|cuanto gastaron|cuanto costo|cuanto tardo|me puedes mostrar|como lo resolv|quien decide|como fue)/;
+
+  function revisar(texto){
+    var t = norm(texto.trim());
+    if (!t) return { tipo:'', titulo:'Escribe una pregunta', items:[{ b:'', t:'La revisamos mientras escribes.' }] };
+    var hallados = REGLAS.filter(function(r){ return r.re.test(t); });
+    if (hallados.length){
+      return { tipo:'mal', marca:'≠', titulo:'Con sesgo', items:hallados.map(function(r){ return { b:r.nombre, t:r.tip }; }) };
+    }
+    if (HECHOS.test(t)){
+      return { tipo:'ok', marca:'=', titulo:'Sin sesgo a la vista', items:[{ b:'Pregunta por hechos.', t:'Repregunta con “¿por qué?” y “¿qué hiciste después?”.' }] };
+    }
+    return { tipo:'', marca:'·', titulo:'Sin señales de sesgo', items:[{ b:'Puede rendir más.', t:'Llévala a un caso concreto: “la última vez que…”.' }] };
+  }
+
+  function pintar(){
+    var r = revisar($('#pregunta').value);
+    var v = $('#veredicto');
+    v.className = 'veredicto ' + r.tipo;
+    v.textContent = '';
+    var strong = document.createElement('strong');
+    if (r.marca){ var m = document.createElement('span'); m.className = 'marca'; m.textContent = r.marca; strong.appendChild(m); }
+    strong.appendChild(document.createTextNode(r.titulo));
+    v.appendChild(strong);
+    var ul = document.createElement('ul');
+    r.items.forEach(function(it){
+      var li = document.createElement('li');
+      if (it.b){ var b = document.createElement('b'); b.textContent = it.b; li.appendChild(b); li.appendChild(document.createTextNode(' ')); }
+      li.appendChild(document.createTextNode(it.t));
+      ul.appendChild(li);
+    });
+    v.appendChild(ul);
+  }
+  $('#pregunta').addEventListener('input', pintar);
+  $$('.ejemplos button').forEach(function(b){
+    b.addEventListener('click', function(){ $('#pregunta').value = b.getAttribute('data-ej'); pintar(); $('#pregunta').focus(); });
+  });
+  pintar();
+
+  /* ---------- Marcas de preguntas (solo en este navegador) ---------- */
+  var CLAVE = 'hb-momtest-marcas';
+  function leer(){ try { return JSON.parse(localStorage.getItem(CLAVE) || '[]'); } catch(e){ return []; } }
+  function guardar(ids){ try { localStorage.setItem(CLAVE, JSON.stringify(ids)); } catch(e){} }
+  var cajas = $$('.preguntas input[type="checkbox"]');
+  var marcadas = leer();
+  cajas.forEach(function(c){ c.checked = marcadas.indexOf(c.id) !== -1; });
+
+  function contar(){
+    $$('[data-count]').forEach(function(el){
+      var etapa = document.getElementById(el.getAttribute('data-count'));
+      var todas = $$('.preguntas input', etapa);
+      var hechas = todas.filter(function(c){ return c.checked; }).length;
+      el.textContent = hechas + '/' + todas.length;
+    });
+  }
+  cajas.forEach(function(c){
+    c.addEventListener('change', function(){
+      guardar(cajas.filter(function(x){ return x.checked; }).map(function(x){ return x.id; }));
+      contar();
+    });
+  });
+  $('#reiniciar').addEventListener('click', function(){
+    cajas.forEach(function(c){ c.checked = false; });
+    guardar([]); contar();
+  });
+  contar();
+
+  /* ---------- Pestañas de segmento ---------- */
+  var tabs = $$('[role="tab"]');
+  function activar(tab, enfocar){
+    tabs.forEach(function(t){
+      var sel = t === tab;
+      t.setAttribute('aria-selected', sel ? 'true' : 'false');
+      t.tabIndex = sel ? 0 : -1;
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !sel;
+    });
+    if (enfocar) tab.focus();
+  }
+  tabs.forEach(function(t, i){
+    t.addEventListener('click', function(){ activar(t); });
+    t.addEventListener('keydown', function(e){
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft'){
+        e.preventDefault();
+        var n = (i + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+        activar(tabs[n], true);
+      }
+    });
+  });
+  activar(tabs[0]);
+
+  /* ---------- Copiar ---------- */
+  function seleccionar(el){
+    var r = document.createRange(); r.selectNodeContents(el);
+    var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  }
+  function copiar(texto, boton, respaldo){
+    var original = boton.textContent;
+    var fin = function(msg){ boton.textContent = msg; setTimeout(function(){ boton.textContent = original; }, 1800); };
+    try {
+      navigator.clipboard.writeText(texto).then(function(){ fin('Copiado'); }, function(){ seleccionar(respaldo); fin('Seleccionado'); });
+    } catch(e){ seleccionar(respaldo); fin('Seleccionado'); }
+  }
+  function textoLista(lista){
+    return $$('li span', lista).map(function(s, i){ return (i + 1) + '. ' + s.textContent; }).join('\n');
+  }
+  $$('[data-copy]').forEach(function(b){
+    b.addEventListener('click', function(){
+      var lista = document.getElementById(b.getAttribute('data-copy'));
+      copiar(textoLista(lista), b, lista);
+    });
+  });
+  $('#copiar-segmento').addEventListener('click', function(){
+    var panel = $$('[role="tabpanel"]').filter(function(p){ return !p.hidden; })[0];
+    var lista = $('.preguntas', panel);
+    copiar(panel.querySelector('h4').textContent + '\n' + textoLista(lista), this, lista);
+  });
+  $('#copiar-tabla').addEventListener('click', function(){
+    var cols = $$('#notas thead th').map(function(th){ return th.textContent; });
+    copiar(cols.join('\t'), this, $('#notas thead'));
+  });
+})();
+</script>
+</body>
+</html>
